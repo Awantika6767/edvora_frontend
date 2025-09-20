@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Separator } from './ui/separator';
 import { Switch } from './ui/switch';
 import { Slider } from './ui/slider';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { 
   ArrowLeft,
   Plus,
@@ -34,10 +35,14 @@ import {
   AlertCircle,
   CheckCircle,
   Lightbulb,
-  BarChart3
+  BarChart3,
+  Target,
+  Settings,
+  FileText
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
+import RateStudio from './RateStudio';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
