@@ -9,6 +9,9 @@ import RequestsList from './components/RequestsList';
 import RequestDetail from './components/RequestDetail';
 import QuotationBuilder from './components/QuotationBuilder';
 import QuotationsList from './components/QuotationsList';
+import RateStudio from './components/RateStudio';
+import OperationsManagement from './components/OperationsManagement';
+import AdminConsole from './components/AdminConsole';
 
 // Import Shadcn components
 import { Button } from './components/ui/button';
