@@ -253,11 +253,11 @@ const QuotationBuilder = ({ request, onBack, onSave }) => {
     try {
       const quotationData = {
         ...quotation,
-        request_id: request.id,
-        total_price: quotation.options.find(opt => opt.id === activeOption)?.total_price || 0
+        request_id: request.id
       };
-
-      // Mock API call
+      
+      // Mock save to backend
+      console.log('Saving quotation:', quotationData);
       toast.success('Quotation saved as draft');
       if (onSave) onSave(quotationData);
     } catch (error) {
@@ -267,19 +267,67 @@ const QuotationBuilder = ({ request, onBack, onSave }) => {
 
   const handleSend = async () => {
     try {
+      const currentOption = quotation.options.find(opt => opt.id === activeOption);
+      const discountPercentage = calculateDiscountPercentage(currentOption);
+      
+      // Check if approval is required (discount > 15%)
+      if (discountPercentage > 15) {
+        setApprovalRequired(true);
+        return;
+      }
+
       const quotationData = {
         ...quotation,
-        status: 'sent',
         request_id: request.id,
-        total_price: quotation.options.find(opt => opt.id === activeOption)?.total_price || 0
+        status: 'sent'
       };
-
-      // Mock API call
-      toast.success('Quotation sent to customer successfully!');
+      
+      console.log('Sending quotation:', quotationData);
+      toast.success('Quotation sent to customer successfully');
       if (onSave) onSave(quotationData);
     } catch (error) {
       toast.error('Failed to send quotation');
     }
+  };
+
+  const handleApprovalRequest = async () => {
+    try {
+      const currentOption = quotation.options.find(opt => opt.id === activeOption);
+      const discountPercentage = calculateDiscountPercentage(currentOption);
+      
+      await axios.post(`${API}/quotations/mock-id/approval`, {
+        quotation_id: 'mock-quotation-id',
+        discount_percentage: discountPercentage,
+        reason: approvalReason,
+        requested_by: 'current-user'
+      });
+      
+      toast.success('Approval request submitted to manager');
+      setApprovalRequired(false);
+      setApprovalReason('');
+    } catch (error) {
+      toast.error('Failed to submit approval request');
+    }
+  };
+
+  const calculateDiscountPercentage = (option) => {
+    if (!option) return 0;
+    const cost = option.line_items.reduce((sum, item) => sum + item.total, 0);
+    const sellingPrice = option.total_price;
+    const standardMargin = 20; // 20% standard margin
+    const standardPrice = cost * (1 + standardMargin / 100);
+    return Math.max(0, ((standardPrice - sellingPrice) / standardPrice) * 100);
+  };
+
+  const handleRateStudioPriceUpdate = (newPrice) => {
+    setQuotation(prev => ({
+      ...prev,
+      options: prev.options.map(option =>
+        option.id === activeOption
+          ? { ...option, total_price: Math.round(newPrice) }
+          : option
+      )
+    }));
   };
 
   const currentOption = quotation.options.find(opt => opt.id === activeOption);
