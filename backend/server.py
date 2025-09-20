@@ -735,6 +735,10 @@ async def get_payment_transactions(
     """Get all payment transactions for a booking"""
     
     transactions = await db.payment_transactions.find({"booking_id": booking_id}).to_list(100)
+    # Remove MongoDB ObjectId fields to avoid serialization issues
+    for transaction in transactions:
+        if "_id" in transaction:
+            del transaction["_id"]
     return transactions
 
 @api_router.post("/payments/refund")
