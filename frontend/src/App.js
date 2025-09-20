@@ -709,6 +709,72 @@ const DashboardRouter = () => {
   return getDashboardComponent();
 };
 
+// Request Pages
+const RequestsPage = () => {
+  const { user } = useAuth();
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  
+  const handleCreateNew = () => {
+    window.location.href = '/requests/new';
+  };
+  
+  const handleViewRequest = (request) => {
+    setSelectedRequest(request);
+  };
+  
+  if (selectedRequest) {
+    return (
+      <RequestDetail
+        request={selectedRequest}
+        userRole={user?.role}
+        onBack={() => setSelectedRequest(null)}
+        onCreateQuotation={(request) => {
+          // Navigate to quotation builder
+          console.log('Create quotation for:', request);
+          toast.success('Quotation builder coming soon!');
+        }}
+      />
+    );
+  }
+  
+  return (
+    <RequestsList
+      userRole={user?.role}
+      onCreateNew={handleCreateNew}
+      onViewRequest={handleViewRequest}
+    />
+  );
+};
+
+const NewRequestPage = () => {
+  const handleSubmit = (requestData) => {
+    console.log('Request submitted:', requestData);
+    window.location.href = '/requests';
+  };
+  
+  const handleCancel = () => {
+    window.location.href = '/requests';
+  };
+  
+  return (
+    <RequestForm
+      onSubmit={handleSubmit}
+      onCancel={handleCancel}
+    />
+  );
+};
+
+const RequestDetailPage = () => {
+  const { user } = useAuth();
+  // This would normally get the request ID from URL params
+  // For now, redirecting to requests list
+  useEffect(() => {
+    window.location.href = '/requests';
+  }, []);
+  
+  return <div>Loading...</div>;
+};
+
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
