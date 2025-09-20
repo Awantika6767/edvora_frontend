@@ -769,7 +769,23 @@ const AppRoutes = () => {
               path="/requests"
               element={
                 <ProtectedRoute>
-                  <div>Requests Page - Coming Soon</div>
+                  <RequestsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/requests/new"
+              element={
+                <ProtectedRoute>
+                  <NewRequestPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/requests/:id"
+              element={
+                <ProtectedRoute>
+                  <RequestDetailPage />
                 </ProtectedRoute>
               }
             />
