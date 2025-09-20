@@ -635,6 +635,10 @@ async def get_pending_approvals(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Access denied")
     
     approvals = await db.approval_requests.find({"status": "pending"}).to_list(100)
+    # Remove MongoDB ObjectId fields to avoid serialization issues
+    for approval in approvals:
+        if "_id" in approval:
+            del approval["_id"]
     return approvals
 
 @api_router.post("/approvals/{approval_id}/decision")
