@@ -216,6 +216,18 @@
           agent: "testing"
           comment: "✅ TESTED: Payment processing system fully operational. POST /api/payments/capture successfully processes payments with transaction tracking. GET /api/payments/transactions/{booking_id} retrieves payment history. POST /api/payments/refund handles refund processing. Role-based access control ensures only Operations and Admin can access payment endpoints. Mock payment gateway integration working with transaction IDs. Fixed MongoDB ObjectId serialization issue during testing."
 
+  - task: "Analytics and Reporting APIs"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "✅ TESTED: Analytics endpoints fully functional. GET /api/analytics/conversion-rates provides detailed conversion analytics by destination, salesperson, and trends (accessible to managers and admin only). GET /api/analytics/pricing-optimization returns pricing insights including average margins, price acceptance rates, optimal price points, and seasonal multipliers (accessible to all roles). Mock data providing realistic business intelligence metrics."
+
 ## frontend:
   - task: "Authentication System with Login Page"
     implemented: true
