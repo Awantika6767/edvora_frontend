@@ -431,7 +431,10 @@ const CustomerDashboard = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Welcome back!</h1>
-        <Button className="bg-orange-500 hover:bg-orange-600">
+        <Button 
+          className="bg-orange-500 hover:bg-orange-600"
+          onClick={() => window.location.href = '/requests/new'}
+        >
           <PlusCircle className="w-4 h-4 mr-2" />
           New Request
         </Button>
