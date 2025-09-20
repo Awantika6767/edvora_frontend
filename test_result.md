@@ -202,16 +202,19 @@
           comment: "✅ TESTED: Advanced quotation management fully functional. POST /api/quotations/{quotation_id}/versions creates quotation versions successfully. POST /api/quotations/{quotation_id}/approval submits approval requests for high discounts. GET /api/approvals/pending shows pending approvals for managers. POST /api/approvals/{approval_id}/decision allows managers to approve/reject requests. Role-based access control working correctly. Fixed MongoDB ObjectId serialization issue during testing."
 
   - task: "Payment Processing API"
-    implemented: false
-    working: "NA"
+    implemented: true
+    working: true
     file: "server.py"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Need to implement payment capture, refund handling, and payment gateway integration."
+        - working: true
+          agent: "testing"
+          comment: "✅ TESTED: Payment processing system fully operational. POST /api/payments/capture successfully processes payments with transaction tracking. GET /api/payments/transactions/{booking_id} retrieves payment history. POST /api/payments/refund handles refund processing. Role-based access control ensures only Operations and Admin can access payment endpoints. Mock payment gateway integration working with transaction IDs. Fixed MongoDB ObjectId serialization issue during testing."
 
 ## frontend:
   - task: "Authentication System with Login Page"
