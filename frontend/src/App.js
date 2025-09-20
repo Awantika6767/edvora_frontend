@@ -730,7 +730,12 @@ function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/login" element={<LoginPage />} />
+            <Route 
+              path="/login" 
+              element={
+                user ? <Navigate to="/dashboard" replace /> : <LoginPage />
+              } 
+            />
             <Route
               path="/dashboard"
               element={
