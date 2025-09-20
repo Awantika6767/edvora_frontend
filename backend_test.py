@@ -183,6 +183,323 @@ class TripFlowAPITester:
                 print(f"   Sample booking amount: {sample_booking.get('total_amount', 'No amount')}")
         return success
 
+    def test_rate_optimization(self, role_name):
+        """Test rate optimization endpoints"""
+        if role_name not in self.tokens:
+            print(f"❌ No token available for {role_name}")
+            return False
+        
+        results = []
+        
+        # Test rate recommendations - need a request_id first
+        requests_success, requests_data = self.run_test(
+            f"Get Requests for Rate Testing - {role_name}",
+            "GET",
+            "requests",
+            200,
+            token=self.tokens[role_name]
+        )
+        
+        if requests_success and requests_data:
+            request_id = requests_data[0].get('id')
+            if request_id:
+                # Test rate recommendations
+                success, response = self.run_test(
+                    f"Rate Recommendations - {role_name}",
+                    "GET",
+                    f"rate-optimization/recommendations/{request_id}",
+                    200,
+                    token=self.tokens[role_name]
+                )
+                results.append(success)
+                if success:
+                    print(f"   Recommended price: ₹{response.get('recommended_price', 'N/A')}")
+                    print(f"   Confidence: {response.get('confidence', 'N/A')}")
+        
+        # Test scenario simulation
+        simulation_data = {
+            "base_price": 100000,
+            "hotel_star": 4,
+            "transport_class": "premium",
+            "duration_days": 5
+        }
+        success, response = self.run_test(
+            f"Rate Simulation - {role_name}",
+            "POST",
+            "rate-optimization/simulate",
+            200,
+            data=simulation_data,
+            token=self.tokens[role_name]
+        )
+        results.append(success)
+        if success:
+            print(f"   Adjusted price: ₹{response.get('adjusted_price', 'N/A')}")
+            print(f"   Conversion rate: {response.get('estimated_conversion', 'N/A')}")
+        
+        # Test competitor rates
+        success, response = self.run_test(
+            f"Competitor Rates - {role_name}",
+            "GET",
+            "rate-optimization/competitor-rates/Goa",
+            200,
+            token=self.tokens[role_name]
+        )
+        results.append(success)
+        if success:
+            print(f"   Market average: ₹{response.get('market_average', 'N/A')}")
+            print(f"   Competitors found: {len(response.get('competitors', []))}")
+        
+        return all(results)
+
+    def test_advanced_quotations(self, role_name):
+        """Test advanced quotation management endpoints"""
+        if role_name not in self.tokens:
+            print(f"❌ No token available for {role_name}")
+            return False
+        
+        results = []
+        
+        # Get existing quotations first
+        quotations_success, quotations_data = self.run_test(
+            f"Get Quotations for Advanced Testing - {role_name}",
+            "GET",
+            "quotations",
+            200,
+            token=self.tokens[role_name]
+        )
+        
+        if quotations_success and quotations_data:
+            quotation_id = quotations_data[0].get('id')
+            if quotation_id:
+                # Test quotation versioning
+                version_data = {
+                    "options": [{"name": "Updated Option", "price": 95000}],
+                    "total_price": 95000,
+                    "margin": 12.0
+                }
+                success, response = self.run_test(
+                    f"Create Quotation Version - {role_name}",
+                    "POST",
+                    f"quotations/{quotation_id}/versions",
+                    200,
+                    data=version_data,
+                    token=self.tokens[role_name]
+                )
+                results.append(success)
+                
+                # Test approval request (only for salesperson)
+                if role_name == "Salesperson":
+                    approval_data = {
+                        "quotation_id": quotation_id,
+                        "discount_percentage": 20.0,
+                        "reason": "Bulk booking discount for corporate client",
+                        "requested_by": self.users[role_name].get('id', '')
+                    }
+                    success, response = self.run_test(
+                        f"Request Quotation Approval - {role_name}",
+                        "POST",
+                        f"quotations/{quotation_id}/approval",
+                        200,
+                        data=approval_data,
+                        token=self.tokens[role_name]
+                    )
+                    results.append(success)
+                    if success:
+                        print(f"   Approval ID: {response.get('approval_id', 'N/A')}")
+        
+        # Test pending approvals (for managers)
+        if role_name in ["Sales Manager", "Admin"]:
+            success, response = self.run_test(
+                f"Get Pending Approvals - {role_name}",
+                "GET",
+                "approvals/pending",
+                200,
+                token=self.tokens[role_name]
+            )
+            results.append(success)
+            if success:
+                print(f"   Pending approvals: {len(response)}")
+                
+                # If there are pending approvals, test decision making
+                if response:
+                    approval_id = response[0].get('id')
+                    if approval_id:
+                        decision_data = {
+                            "decision": "approved",
+                            "comment": "Approved for strategic client"
+                        }
+                        success, response = self.run_test(
+                            f"Make Approval Decision - {role_name}",
+                            "POST",
+                            f"approvals/{approval_id}/decision",
+                            200,
+                            data=decision_data,
+                            token=self.tokens[role_name]
+                        )
+                        results.append(success)
+        
+        return all(results) if results else True
+
+    def test_payment_processing(self, role_name):
+        """Test payment processing endpoints"""
+        if role_name not in self.tokens:
+            print(f"❌ No token available for {role_name}")
+            return False
+        
+        # Only operations and admin can access payment endpoints
+        if role_name not in ["Operations", "Admin"]:
+            print(f"   ⚠️  Skipping payment tests for {role_name} (insufficient permissions)")
+            return True
+        
+        results = []
+        
+        # Get existing bookings first
+        bookings_success, bookings_data = self.run_test(
+            f"Get Bookings for Payment Testing - {role_name}",
+            "GET",
+            "bookings",
+            200,
+            token=self.tokens[role_name]
+        )
+        
+        if bookings_success and bookings_data:
+            booking_id = bookings_data[0].get('id')
+            if booking_id:
+                # Test payment capture
+                payment_data = {
+                    "booking_id": booking_id,
+                    "amount": 50000,
+                    "payment_method": "card"
+                }
+                success, response = self.run_test(
+                    f"Capture Payment - {role_name}",
+                    "POST",
+                    "payments/capture",
+                    200,
+                    data=payment_data,
+                    token=self.tokens[role_name]
+                )
+                results.append(success)
+                if success:
+                    print(f"   Transaction ID: {response.get('transaction_id', 'N/A')}")
+                    print(f"   Amount paid: ₹{response.get('amount_paid', 'N/A')}")
+                
+                # Test get payment transactions
+                success, response = self.run_test(
+                    f"Get Payment Transactions - {role_name}",
+                    "GET",
+                    f"payments/transactions/{booking_id}",
+                    200,
+                    token=self.tokens[role_name]
+                )
+                results.append(success)
+                if success:
+                    print(f"   Transaction count: {len(response)}")
+                
+                # Test refund processing
+                refund_data = {
+                    "booking_id": booking_id,
+                    "amount": 10000,
+                    "reason": "Partial cancellation"
+                }
+                success, response = self.run_test(
+                    f"Process Refund - {role_name}",
+                    "POST",
+                    "payments/refund",
+                    200,
+                    data=refund_data,
+                    token=self.tokens[role_name]
+                )
+                results.append(success)
+                if success:
+                    print(f"   Refund ID: {response.get('refund_id', 'N/A')}")
+        
+        return all(results) if results else True
+
+    def test_analytics(self, role_name):
+        """Test analytics endpoints"""
+        if role_name not in self.tokens:
+            print(f"❌ No token available for {role_name}")
+            return False
+        
+        results = []
+        
+        # Test conversion rates analytics (managers and admin only)
+        if role_name in ["Sales Manager", "Admin"]:
+            success, response = self.run_test(
+                f"Conversion Analytics - {role_name}",
+                "GET",
+                "analytics/conversion-rates",
+                200,
+                token=self.tokens[role_name]
+            )
+            results.append(success)
+            if success:
+                print(f"   Overall conversion: {response.get('overall_conversion', 'N/A')}")
+                print(f"   Destinations tracked: {len(response.get('by_destination', {}))}")
+        
+        # Test pricing optimization analytics (all roles can access)
+        success, response = self.run_test(
+            f"Pricing Analytics - {role_name}",
+            "GET",
+            "analytics/pricing-optimization",
+            200,
+            token=self.tokens[role_name]
+        )
+        results.append(success)
+        if success:
+            print(f"   Average margin: {response.get('average_margin', 'N/A')}")
+            print(f"   Price acceptance rate: {response.get('price_acceptance_rate', 'N/A')}")
+        
+        return all(results) if results else True
+
+    def test_create_travel_request(self, role_name):
+        """Test creating a new travel request"""
+        if role_name not in self.tokens:
+            print(f"❌ No token available for {role_name}")
+            return False
+        
+        # Only customers should be able to create requests
+        if role_name != "Customer":
+            print(f"   ⚠️  Skipping request creation for {role_name}")
+            return True
+        
+        request_data = {
+            "title": "Test Business Trip to Mumbai",
+            "travel_type": "business",
+            "travelers_count": 2,
+            "adults": 2,
+            "children": 0,
+            "infants": 0,
+            "departure_date": "2024-12-01",
+            "return_date": "2024-12-05",
+            "is_flexible_dates": True,
+            "budget_min": 80000,
+            "budget_max": 120000,
+            "budget_per_person": True,
+            "destinations": ["Mumbai", "Business District"],
+            "transport_modes": ["Flight"],
+            "accommodation_star": 4,
+            "meal_preference": "Vegetarian",
+            "special_requirements": "Airport pickup required",
+            "status": "pending"
+        }
+        
+        success, response = self.run_test(
+            f"Create Travel Request - {role_name}",
+            "POST",
+            "requests",
+            200,
+            data=request_data,
+            token=self.tokens[role_name]
+        )
+        
+        if success:
+            print(f"   Created request: {response.get('title', 'N/A')}")
+            print(f"   Request ID: {response.get('id', 'N/A')}")
+        
+        return success
+
 def main():
     print("🚀 Starting TripFlow B2B API Testing...")
     print("=" * 60)
