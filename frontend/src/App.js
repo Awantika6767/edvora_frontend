@@ -7,6 +7,8 @@ import './App.css';
 import RequestForm from './components/RequestForm';
 import RequestsList from './components/RequestsList';
 import RequestDetail from './components/RequestDetail';
+import QuotationBuilder from './components/QuotationBuilder';
+import QuotationsList from './components/QuotationsList';
 
 // Import Shadcn components
 import { Button } from './components/ui/button';
