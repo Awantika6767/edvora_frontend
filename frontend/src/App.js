@@ -308,6 +308,7 @@ const Layout = ({ children }) => {
             key={item.path}
             variant="ghost"
             className="w-full justify-start h-11 text-gray-700 hover:bg-orange-50 hover:text-orange-700"
+            onClick={() => window.location.href = item.path}
           >
             <item.icon className="w-5 h-5 mr-3" />
             {item.label}
