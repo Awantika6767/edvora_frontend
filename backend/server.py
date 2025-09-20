@@ -440,6 +440,376 @@ async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
     
     return stats
 
+# Rate Optimization Models
+class RateRecommendation(BaseModel):
+    request_id: str
+    recommended_price: float
+    confidence: float
+    reasoning: str
+    seasonal_factor: float = 1.0
+    competitor_delta: float = 0.0
+    demand_factor: float = 1.0
+
+class ScenarioSimulation(BaseModel):
+    base_price: float
+    hotel_star: int = 3
+    transport_class: str = "economy"
+    duration_days: int = 3
+    estimated_conversion: float = 0.75
+
+class ApprovalRequest(BaseModel):
+    quotation_id: str
+    discount_percentage: float
+    reason: str
+    requested_by: str
+
+class PaymentTransaction(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    booking_id: str
+    amount: float
+    payment_method: str
+    transaction_id: Optional[str] = None
+    status: str = "pending"  # pending, completed, failed, refunded
+    gateway_response: Optional[dict] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# Rate Optimization Engine Endpoints
+@api_router.get("/rate-optimization/recommendations/{request_id}")
+async def get_rate_recommendations(
+    request_id: str, 
+    current_user: User = Depends(get_current_user)
+):
+    """Get AI-powered rate recommendations for a travel request"""
+    
+    # Mock rate recommendation logic
+    request = await db.travel_requests.find_one({"id": request_id})
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    # Simulate dynamic pricing based on request parameters
+    base_price = request.get("budget_max", 100000)
+    seasonal_factor = 1.2 if "12" in request.get("departure_date", "") else 1.0
+    demand_factor = 1.1 if request.get("is_flexible_dates", False) else 1.0
+    competitor_delta = 0.05  # 5% below competitor
+    
+    recommended_price = base_price * seasonal_factor * demand_factor * (1 - competitor_delta)
+    confidence = 0.85 if request.get("travel_type") == "business" else 0.75
+    
+    reasoning = f"Peak season: {seasonal_factor > 1.0}, Flexible dates: {request.get('is_flexible_dates', False)}, Business travel: {request.get('travel_type') == 'business'}"
+    
+    return RateRecommendation(
+        request_id=request_id,
+        recommended_price=round(recommended_price, 2),
+        confidence=confidence,
+        reasoning=reasoning,
+        seasonal_factor=seasonal_factor,
+        competitor_delta=competitor_delta,
+        demand_factor=demand_factor
+    )
+
+@api_router.post("/rate-optimization/simulate")
+async def simulate_pricing_scenario(
+    scenario: ScenarioSimulation,
+    current_user: User = Depends(get_current_user)
+):
+    """Simulate pricing for different scenarios"""
+    
+    # Base price multipliers
+    star_multipliers = {3: 1.0, 4: 1.4, 5: 2.0}
+    transport_multipliers = {"economy": 1.0, "premium": 1.3, "private": 1.8}
+    
+    adjusted_price = (
+        scenario.base_price * 
+        star_multipliers.get(scenario.hotel_star, 1.0) * 
+        transport_multipliers.get(scenario.transport_class, 1.0) * 
+        (scenario.duration_days / 3.0)  # 3 days baseline
+    )
+    
+    # Estimate conversion probability (inverse relationship with price)
+    conversion_rate = max(0.2, 0.95 - (adjusted_price / scenario.base_price - 1) * 0.5)
+    
+    return {
+        "adjusted_price": round(adjusted_price, 2),
+        "estimated_conversion": round(conversion_rate, 2),
+        "price_change_percentage": round((adjusted_price / scenario.base_price - 1) * 100, 1),
+        "margin_impact": round((adjusted_price - scenario.base_price) * 0.15, 2)  # 15% margin
+    }
+
+@api_router.get("/rate-optimization/competitor-rates/{destination}")
+async def get_competitor_rates(
+    destination: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get competitor rate information for a destination"""
+    
+    # Mock competitor data
+    competitors = [
+        {"name": "TravelPro", "rate": 95000, "confidence": "high"},
+        {"name": "BusinessTravel Inc", "rate": 105000, "confidence": "medium"},
+        {"name": "CorporateJourneys", "rate": 88000, "confidence": "high"}
+    ]
+    
+    return {
+        "destination": destination,
+        "competitors": competitors,
+        "market_average": 96000,
+        "suggested_action": "Price competitively at ₹92,000 to win while maintaining margin"
+    }
+
+# Advanced Quotation Management
+@api_router.post("/quotations/{quotation_id}/versions")
+async def create_quotation_version(
+    quotation_id: str,
+    version_data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new version of a quotation"""
+    
+    original = await db.quotations.find_one({"id": quotation_id})
+    if not original:
+        raise HTTPException(status_code=404, detail="Quotation not found")
+    
+    # Create new version
+    new_version = Quotation(
+        request_id=original["request_id"],
+        salesperson_id=current_user.id,
+        salesperson_name=current_user.name,
+        title=f"{original['title']} (v{len(original.get('versions', [])) + 2})",
+        options=version_data.get("options", original["options"]),
+        total_price=version_data.get("total_price", original["total_price"]),
+        margin=version_data.get("margin", original["margin"]),
+        validity_days=version_data.get("validity_days", 7),
+        status="draft"
+    )
+    
+    # Store version history
+    await db.quotation_versions.insert_one({
+        "quotation_id": quotation_id,
+        "version": len(original.get("versions", [])) + 2,
+        "data": new_version.dict(),
+        "created_by": current_user.id,
+        "created_at": datetime.now(timezone.utc)
+    })
+    
+    return new_version
+
+@api_router.post("/quotations/{quotation_id}/approval")
+async def request_quotation_approval(
+    quotation_id: str,
+    approval_request: ApprovalRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Request manager approval for quotation discount"""
+    
+    quotation = await db.quotations.find_one({"id": quotation_id})
+    if not quotation:
+        raise HTTPException(status_code=404, detail="Quotation not found")
+    
+    # Store approval request
+    approval_data = {
+        "id": str(uuid.uuid4()),
+        "quotation_id": quotation_id,
+        "discount_percentage": approval_request.discount_percentage,
+        "reason": approval_request.reason,
+        "requested_by": current_user.id,
+        "requested_by_name": current_user.name,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc)
+    }
+    
+    await db.approval_requests.insert_one(approval_data)
+    
+    # Update quotation status
+    await db.quotations.update_one(
+        {"id": quotation_id},
+        {"$set": {"status": "pending_approval", "updated_at": datetime.now(timezone.utc)}}
+    )
+    
+    return {"message": "Approval request submitted", "approval_id": approval_data["id"]}
+
+@api_router.get("/approvals/pending")
+async def get_pending_approvals(current_user: User = Depends(get_current_user)):
+    """Get pending approval requests for managers"""
+    
+    if current_user.role not in ["sales_manager", "admin"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    approvals = await db.approval_requests.find({"status": "pending"}).to_list(100)
+    return approvals
+
+@api_router.post("/approvals/{approval_id}/decision")
+async def make_approval_decision(
+    approval_id: str,
+    decision: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Approve or reject a quotation approval request"""
+    
+    if current_user.role not in ["sales_manager", "admin"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    approval = await db.approval_requests.find_one({"id": approval_id})
+    if not approval:
+        raise HTTPException(status_code=404, detail="Approval request not found")
+    
+    # Update approval status
+    await db.approval_requests.update_one(
+        {"id": approval_id},
+        {
+            "$set": {
+                "status": decision["decision"],  # "approved" or "rejected"
+                "manager_comment": decision.get("comment", ""),
+                "decided_by": current_user.id,
+                "decided_by_name": current_user.name,
+                "decided_at": datetime.now(timezone.utc)
+            }
+        }
+    )
+    
+    # Update quotation status
+    quotation_status = "approved" if decision["decision"] == "approved" else "draft"
+    await db.quotations.update_one(
+        {"id": approval["quotation_id"]},
+        {"$set": {"status": quotation_status, "updated_at": datetime.now(timezone.utc)}}
+    )
+    
+    return {"message": f"Approval request {decision['decision']}"}
+
+# Payment Processing Endpoints
+@api_router.post("/payments/capture")
+async def capture_payment(
+    payment_data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Capture payment for a booking"""
+    
+    if current_user.role not in ["operations", "admin"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    booking = await db.bookings.find_one({"id": payment_data["booking_id"]})
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    
+    # Create payment transaction
+    transaction = PaymentTransaction(
+        booking_id=payment_data["booking_id"],
+        amount=payment_data["amount"],
+        payment_method=payment_data.get("payment_method", "card"),
+        transaction_id=f"TXN-{str(uuid.uuid4())[:8].upper()}",
+        status="completed"  # Mock successful payment
+    )
+    
+    await db.payment_transactions.insert_one(transaction.dict())
+    
+    # Update booking payment status
+    total_paid = booking.get("amount_paid", 0) + payment_data["amount"]
+    payment_status = "paid" if total_paid >= booking["total_amount"] else "partial"
+    
+    await db.bookings.update_one(
+        {"id": payment_data["booking_id"]},
+        {
+            "$set": {
+                "payment_status": payment_status,
+                "amount_paid": total_paid,
+                "updated_at": datetime.now(timezone.utc)
+            }
+        }
+    )
+    
+    return {
+        "transaction_id": transaction.transaction_id,
+        "status": "success",
+        "amount_paid": total_paid,
+        "remaining_amount": max(0, booking["total_amount"] - total_paid)
+    }
+
+@api_router.get("/payments/transactions/{booking_id}")
+async def get_payment_transactions(
+    booking_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all payment transactions for a booking"""
+    
+    transactions = await db.payment_transactions.find({"booking_id": booking_id}).to_list(100)
+    return transactions
+
+@api_router.post("/payments/refund")
+async def process_refund(
+    refund_data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Process refund for a booking"""
+    
+    if current_user.role not in ["operations", "admin"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Create refund transaction
+    refund_transaction = PaymentTransaction(
+        booking_id=refund_data["booking_id"],
+        amount=-abs(refund_data["amount"]),  # Negative for refund
+        payment_method="refund",
+        transaction_id=f"REF-{str(uuid.uuid4())[:8].upper()}",
+        status="completed"
+    )
+    
+    await db.payment_transactions.insert_one(refund_transaction.dict())
+    
+    return {
+        "refund_id": refund_transaction.transaction_id,
+        "status": "success",
+        "refund_amount": refund_data["amount"]
+    }
+
+# Enhanced Analytics Endpoints
+@api_router.get("/analytics/conversion-rates")
+async def get_conversion_analytics(current_user: User = Depends(get_current_user)):
+    """Get conversion rate analytics"""
+    
+    if current_user.role not in ["sales_manager", "admin"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Mock analytics data
+    return {
+        "overall_conversion": 0.742,
+        "by_destination": {
+            "Goa": 0.823,
+            "Manali": 0.687,
+            "Kerala": 0.756,
+            "Rajasthan": 0.634
+        },
+        "by_salesperson": {
+            "Sarah Sales": 0.834,
+            "John Doe": 0.723,
+            "Mike Smith": 0.692
+        },
+        "trend_data": [
+            {"month": "Jan", "rate": 0.72},
+            {"month": "Feb", "rate": 0.68},
+            {"month": "Mar", "rate": 0.74},
+            {"month": "Apr", "rate": 0.78}
+        ]
+    }
+
+@api_router.get("/analytics/pricing-optimization")
+async def get_pricing_analytics(current_user: User = Depends(get_current_user)):
+    """Get pricing optimization analytics"""
+    
+    return {
+        "average_margin": 0.147,
+        "price_acceptance_rate": 0.721,
+        "optimal_price_points": {
+            "budget_leisure": {"min": 45000, "max": 85000, "optimal": 62000},
+            "premium_leisure": {"min": 85000, "max": 150000, "optimal": 118000},
+            "business_travel": {"min": 75000, "max": 200000, "optimal": 135000}
+        },
+        "seasonal_multipliers": {
+            "peak": 1.4,
+            "high": 1.2,
+            "normal": 1.0,
+            "low": 0.8
+        }
+    }
+
 # Include the router in the main app
 app.include_router(api_router)
 
