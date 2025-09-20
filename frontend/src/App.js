@@ -382,7 +382,10 @@ const Layout = ({ children }) => {
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-xs"></span>
               </Button>
               
-              <Button className="bg-orange-500 hover:bg-orange-600 text-white">
+              <Button 
+                className="bg-orange-500 hover:bg-orange-600 text-white"
+                onClick={() => window.location.href = '/requests/new'}
+              >
                 <PlusCircle className="w-4 h-4 mr-2" />
                 Quick Create
               </Button>
