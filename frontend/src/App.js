@@ -73,6 +73,9 @@ const AuthProvider = ({ children }) => {
       setUser(userData);
       
       toast.success(`Welcome back, ${userData.name}!`);
+      
+      // Force navigation to dashboard
+      window.location.href = '/dashboard';
       return true;
     } catch (error) {
       toast.error('Invalid credentials. Please try again.');
