@@ -187,16 +187,19 @@
           comment: "✅ TESTED: All rate optimization APIs working perfectly. GET /api/rate-optimization/recommendations/{request_id} returns dynamic pricing with confidence scores. POST /api/rate-optimization/simulate provides scenario-based pricing calculations. GET /api/rate-optimization/competitor-rates/{destination} returns market intelligence data. All endpoints tested across all user roles with realistic data."
 
   - task: "Advanced Quotation Builder API"
-    implemented: false
-    working: "NA"
+    implemented: true
+    working: true
     file: "server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Need to enhance quotation API with versioning, approval workflow, and line-item management."
+        - working: true
+          agent: "testing"
+          comment: "✅ TESTED: Advanced quotation management fully functional. POST /api/quotations/{quotation_id}/versions creates quotation versions successfully. POST /api/quotations/{quotation_id}/approval submits approval requests for high discounts. GET /api/approvals/pending shows pending approvals for managers. POST /api/approvals/{approval_id}/decision allows managers to approve/reject requests. Role-based access control working correctly. Fixed MongoDB ObjectId serialization issue during testing."
 
   - task: "Payment Processing API"
     implemented: false
