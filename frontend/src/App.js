@@ -782,6 +782,100 @@ const RequestDetailPage = () => {
   return <div>Loading...</div>;
 };
 
+// Quotation Pages
+const QuotationsPage = () => {
+  const { user } = useAuth();
+  
+  const handleCreateNew = () => {
+    window.location.href = '/quotations/new';
+  };
+  
+  const handleViewQuotation = (quotation) => {
+    console.log('View quotation:', quotation);
+    toast.success('Quotation detail view coming soon!');
+  };
+  
+  const handleEditQuotation = (quotation) => {
+    console.log('Edit quotation:', quotation);
+    toast.success('Edit quotation coming soon!');
+  };
+  
+  return (
+    <QuotationsList
+      userRole={user?.role}
+      onCreateNew={handleCreateNew}
+      onViewQuotation={handleViewQuotation}
+      onEditQuotation={handleEditQuotation}
+    />
+  );
+};
+
+const NewQuotationPage = () => {
+  // For now, redirect to requests to create quotation from request
+  useEffect(() => {
+    toast.info('Please create quotation from a travel request');
+    window.location.href = '/requests';
+  }, []);
+  
+  return <div>Redirecting...</div>;
+};
+
+const QuotationBuilderPage = () => {
+  const [request, setRequest] = useState(null);
+  
+  useEffect(() => {
+    // Mock request data for now
+    setRequest({
+      id: '1',
+      title: 'Family Trip to Goa',
+      customer_name: 'John Customer',
+      travelers_count: 4,
+      adults: 2,
+      children: 2,
+      infants: 0,
+      departure_date: '2024-12-15',
+      return_date: '2024-12-22',
+      is_flexible_dates: false,
+      budget_min: 80000,
+      budget_max: 120000,
+      budget_per_person: false,
+      destinations: ['Goa', 'Beach'],
+      transport_modes: ['flight', 'car'],
+      accommodation_star: 4,
+      meal_preference: 'vegetarian',
+      travel_type: 'leisure'
+    });
+  }, []);
+  
+  const handleBack = () => {
+    window.location.href = '/requests';
+  };
+  
+  const handleSave = (quotationData) => {
+    console.log('Quotation saved:', quotationData);
+    window.location.href = '/quotations';
+  };
+  
+  if (!request) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading request details...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <QuotationBuilder
+      request={request}
+      onBack={handleBack}
+      onSave={handleSave}
+    />
+  );
+};
+
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
