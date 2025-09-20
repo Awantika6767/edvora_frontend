@@ -101,6 +101,8 @@ const QuotationBuilder = ({ request, onBack, onSave }) => {
 
   const [activeOption, setActiveOption] = useState('A');
   const [showRatePanel, setShowRatePanel] = useState(false);
+  const [approvalRequired, setApprovalRequired] = useState(false);
+  const [approvalReason, setApprovalReason] = useState('');
   const [recommendations, setRecommendations] = useState({
     suggested_price: 85000,
     confidence: 82,
