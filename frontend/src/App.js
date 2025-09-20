@@ -1542,7 +1542,69 @@ const AppRoutes = () => {
               path="/bookings"
               element={
                 <ProtectedRoute>
-                  <div>Bookings Page - Coming Soon</div>
+                  <OperationsManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/operations"
+              element={
+                <ProtectedRoute>
+                  <OperationsManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/rate-studio"
+              element={
+                <ProtectedRoute>
+                  <RateStudio />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute>
+                  <AdminConsole />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <AdminConsole />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/team"
+              element={
+                <ProtectedRoute>
+                  <div className="p-6">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-4">Team Management</h1>
+                    <p className="text-gray-600">Team management interface coming soon</p>
+                  </div>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute>
+                  <div className="p-6">
+                    <h1 className="text-3xl font-bold text-gray-900 mb-4">Reports & Analytics</h1>
+                    <p className="text-gray-600">Advanced reporting interface coming soon</p>
+                  </div>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/audit"
+              element={
+                <ProtectedRoute>
+                  <AdminConsole />
                 </ProtectedRoute>
               }
             />
