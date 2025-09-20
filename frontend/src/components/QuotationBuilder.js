@@ -715,6 +715,47 @@ const QuotationBuilder = ({ request, onBack, onSave }) => {
           </Card>
         </div>
       </div>
+
+      {/* Approval Required Dialog */}
+      <Dialog open={approvalRequired} onOpenChange={setApprovalRequired}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <AlertCircle className="w-5 h-5 text-orange-500" />
+              <span>Manager Approval Required</span>
+            </DialogTitle>
+            <DialogDescription>
+              This quotation has a discount greater than 15% and requires manager approval before sending.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="approval-reason">Reason for Discount</Label>
+              <Textarea
+                id="approval-reason"
+                placeholder="Please provide a reason for the high discount..."
+                value={approvalReason}
+                onChange={(e) => setApprovalReason(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setApprovalRequired(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleApprovalRequest}
+                disabled={!approvalReason.trim()}
+                className="bg-orange-500 hover:bg-orange-600"
+              >
+                Request Approval
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
