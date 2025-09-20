@@ -112,34 +112,37 @@ const QuotationBuilder = ({ request, onBack, onSave }) => {
   }, []); // Remove dependency to prevent infinite loop
 
   const calculateTotals = () => {
-    const updatedOptions = quotation.options.map(option => {
-      let subtotal = 0;
-      const updatedLineItems = option.line_items.map(item => {
-        const total = item.quantity * item.unit_price;
-        subtotal += total;
-        return { ...item, total };
+    // Initialize totals on first load only
+    if (quotation.options[0].line_items[0].total === 0) {
+      const updatedOptions = quotation.options.map(option => {
+        let subtotal = 0;
+        const updatedLineItems = option.line_items.map(item => {
+          const total = item.quantity * item.unit_price;
+          subtotal += total;
+          return { ...item, total };
+        });
+
+        // Calculate taxes (assuming 18% GST)
+        const taxItem = updatedLineItems.find(item => item.category === 'taxes');
+        if (taxItem) {
+          const taxableAmount = subtotal - taxItem.total;
+          taxItem.total = taxableAmount * 0.18;
+          taxItem.unit_price = taxItem.total;
+          subtotal = taxableAmount + taxItem.total;
+        }
+
+        // Add margin
+        const total_price = subtotal * (1 + option.margin_percentage / 100);
+
+        return {
+          ...option,
+          line_items: updatedLineItems,
+          total_price: Math.round(total_price)
+        };
       });
 
-      // Calculate taxes (assuming 18% GST)
-      const taxItem = updatedLineItems.find(item => item.category === 'taxes');
-      if (taxItem) {
-        const taxableAmount = subtotal - taxItem.total;
-        taxItem.total = taxableAmount * 0.18;
-        taxItem.unit_price = taxItem.total;
-        subtotal = taxableAmount + taxItem.total;
-      }
-
-      // Add margin
-      const total_price = subtotal * (1 + option.margin_percentage / 100);
-
-      return {
-        ...option,
-        line_items: updatedLineItems,
-        total_price: Math.round(total_price)
-      };
-    });
-
-    setQuotation(prev => ({ ...prev, options: updatedOptions }));
+      setQuotation(prev => ({ ...prev, options: updatedOptions }));
+    }
   };
 
   const updateLineItem = (optionId, itemId, field, value) => {
