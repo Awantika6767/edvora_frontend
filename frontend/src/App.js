@@ -738,9 +738,7 @@ const RequestsPage = () => {
         userRole={user?.role}
         onBack={() => setSelectedRequest(null)}
         onCreateQuotation={(request) => {
-          // Navigate to quotation builder
-          console.log('Create quotation for:', request);
-          toast.success('Quotation builder coming soon!');
+          window.location.href = `/quotations/builder/${request.id}`;
         }}
       />
     );
