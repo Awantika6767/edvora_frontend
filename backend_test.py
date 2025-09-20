@@ -540,13 +540,48 @@ def main():
             tester.test_dashboard_stats(role_name)
     
     # Test data endpoints for all roles
-    print("\n📋 DATA ENDPOINTS TESTING")
+    print("\n📋 BASIC DATA ENDPOINTS TESTING")
     print("-" * 40)
     for _, _, role_name in demo_accounts:
         if role_name in tester.tokens:
             tester.test_travel_requests(role_name)
             tester.test_quotations(role_name)
             tester.test_bookings(role_name)
+    
+    # Test travel request creation
+    print("\n📋 TRAVEL REQUEST CREATION TESTING")
+    print("-" * 40)
+    for _, _, role_name in demo_accounts:
+        if role_name in tester.tokens:
+            tester.test_create_travel_request(role_name)
+    
+    # Test rate optimization endpoints
+    print("\n📋 RATE OPTIMIZATION TESTING")
+    print("-" * 40)
+    for _, _, role_name in demo_accounts:
+        if role_name in tester.tokens:
+            tester.test_rate_optimization(role_name)
+    
+    # Test advanced quotation management
+    print("\n📋 ADVANCED QUOTATION MANAGEMENT TESTING")
+    print("-" * 40)
+    for _, _, role_name in demo_accounts:
+        if role_name in tester.tokens:
+            tester.test_advanced_quotations(role_name)
+    
+    # Test payment processing
+    print("\n📋 PAYMENT PROCESSING TESTING")
+    print("-" * 40)
+    for _, _, role_name in demo_accounts:
+        if role_name in tester.tokens:
+            tester.test_payment_processing(role_name)
+    
+    # Test analytics endpoints
+    print("\n📋 ANALYTICS TESTING")
+    print("-" * 40)
+    for _, _, role_name in demo_accounts:
+        if role_name in tester.tokens:
+            tester.test_analytics(role_name)
     
     # Test unauthorized access
     print("\n📋 SECURITY TESTING")
@@ -565,6 +600,25 @@ def main():
         401,  # Should fail with invalid token
         token="invalid-token-12345"
     )
+    
+    # Test rate optimization without token
+    tester.run_test(
+        "Unauthorized Rate Recommendations",
+        "GET",
+        "rate-optimization/recommendations/test-id",
+        401
+    )
+    
+    # Test payment endpoints without proper role
+    if "Customer" in tester.tokens:
+        tester.run_test(
+            "Customer Payment Access (Should Fail)",
+            "POST",
+            "payments/capture",
+            403,  # Should fail - customers can't capture payments
+            data={"booking_id": "test", "amount": 1000},
+            token=tester.tokens["Customer"]
+        )
     
     # Print final results
     print("\n" + "=" * 60)
