@@ -109,7 +109,7 @@ const QuotationBuilder = ({ request, onBack, onSave }) => {
 
   useEffect(() => {
     calculateTotals();
-  }, [quotation.options]);
+  }, []); // Remove dependency to prevent infinite loop
 
   const calculateTotals = () => {
     const updatedOptions = quotation.options.map(option => {
