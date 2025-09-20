@@ -786,11 +786,7 @@ const AppRoutes = () => {
             />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>
-        </BrowserRouter>
-        <Toaster position="top-right" />
-      </AuthProvider>
-    </div>
   );
-}
+};
 
 export default App;
