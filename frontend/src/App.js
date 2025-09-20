@@ -868,7 +868,23 @@ const AppRoutes = () => {
               path="/quotations"
               element={
                 <ProtectedRoute>
-                  <div>Quotations Page - Coming Soon</div>
+                  <QuotationsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/quotations/new"
+              element={
+                <ProtectedRoute>
+                  <NewQuotationPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/quotations/builder/:requestId"
+              element={
+                <ProtectedRoute>
+                  <QuotationBuilderPage />
                 </ProtectedRoute>
               }
             />
