@@ -732,7 +732,20 @@ function App() {
     <div className="App">
       <AuthProvider>
         <BrowserRouter>
-          <Routes>
+          <AppRoutes />
+        </BrowserRouter>
+        <Toaster position="top-right" />
+      </AuthProvider>
+    </div>
+  );
+}
+
+// Separate Routes Component
+const AppRoutes = () => {
+  const { user } = useAuth();
+  
+  return (
+    <Routes>
             <Route 
               path="/login" 
               element={
