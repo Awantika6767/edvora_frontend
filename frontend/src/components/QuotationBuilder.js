@@ -645,6 +645,15 @@ const QuotationBuilder = ({ request, onBack, onSave }) => {
             </Card>
           )}
 
+          {showRatePanel && (
+            <RateStudio
+              currentPrice={currentOption?.total_price || 0}
+              costBreakdown={currentOption?.line_items || []}
+              onPriceUpdate={handleRateStudioPriceUpdate}
+              marketData={recommendations.market_intelligence}
+            />
+          )}
+
           {/* Scenario Simulator */}
           <Card>
             <CardHeader>
