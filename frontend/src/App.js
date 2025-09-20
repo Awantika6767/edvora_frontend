@@ -3,6 +3,11 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import './App.css';
 
+// Import new components
+import RequestForm from './components/RequestForm';
+import RequestsList from './components/RequestsList';
+import RequestDetail from './components/RequestDetail';
+
 // Import Shadcn components
 import { Button } from './components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card';
